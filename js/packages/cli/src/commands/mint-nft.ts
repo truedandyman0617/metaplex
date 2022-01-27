@@ -261,7 +261,10 @@ export const updateMetadata = async (
     data,
     updateAuthority: walletKeypair.publicKey.toBase58(),
     primarySaleHappened: null,
-    isMutable: true,
+    ////////////////////////////////
+    // isMutable: true,
+    isMutable: null,
+    ////////////////////////////////
   });
   const txnData = Buffer.from(serialize(METADATA_SCHEMA, value));
 

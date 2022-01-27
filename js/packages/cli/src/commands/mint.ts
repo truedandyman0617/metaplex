@@ -160,6 +160,9 @@ export async function mint(
 export async function mintV2(
   keypair: string,
   env: string,
+  ////////////////////////////////
+  authorityKeypair: string | null,
+  ////////////////////////////////
   candyMachineAddress: PublicKey,
   rpcUrl: string,
 ): Promise<string> {
@@ -167,17 +170,32 @@ export async function mintV2(
 
   const userKeyPair = loadWalletKey(keypair);
   const anchorProgram = await loadCandyProgramV2(userKeyPair, env, rpcUrl);
+
+  ////////////////////////////////
+  const authorityKeyPairLoaded = authorityKeypair
+    ? loadWalletKey(authorityKeypair)
+    : userKeyPair;
+  const collectionAuthorityPubkey = new PublicKey(
+    'Ejo141A7eV7LNfw34Bq4VRLYr3bg7DaihBaRteu2kHoQ',
+  );
+
   const userTokenAccountAddress = await getTokenWallet(
-    userKeyPair.publicKey,
+    // userKeyPair.publicKey,
+    collectionAuthorityPubkey,
     mint.publicKey,
   );
+
+  ////////////////////////////////
 
   const candyMachine: any = await anchorProgram.account.candyMachine.fetch(
     candyMachineAddress,
   );
 
   const remainingAccounts = [];
-  const signers = [mint, userKeyPair];
+  ////////////////////////////////
+  // const signers = [mint, userKeyPair];
+  const signers = [mint, userKeyPair, authorityKeyPairLoaded];
+  ////////////////////////////////
   const cleanupInstructions = [];
   const instructions = [
     anchor.web3.SystemProgram.createAccount({
@@ -200,7 +218,10 @@ export async function mintV2(
     createAssociatedTokenAccountInstruction(
       userTokenAccountAddress,
       userKeyPair.publicKey,
-      userKeyPair.publicKey,
+      /////////////////////////////////
+      // userKeyPair.publicKey,
+      collectionAuthorityPubkey,
+      ///////////////////
       mint.publicKey,
     ),
     Token.createMintToInstruction(
@@ -326,7 +347,10 @@ export async function mintV2(
         metadata: metadataAddress,
         masterEdition,
         mintAuthority: userKeyPair.publicKey,
-        updateAuthority: userKeyPair.publicKey,
+        ////////////////////////////////
+        // updateAuthority: userKeyPair.publicKey,
+        updateAuthority: authorityKeyPairLoaded.publicKey,
+        ////////////////////////////////
         tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
         tokenProgram: TOKEN_PROGRAM_ID,
         systemProgram: SystemProgram.programId,
